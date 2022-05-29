@@ -1,13 +1,15 @@
 station_cfg = {}
-dofile("config.lua")
+publishing_mqtt = false
+publishing_http = false
 
-delayed_restart = tmr.create()
+watchdog = tmr.create()
 push_timer = tmr.create()
-chip_id = node.chipid()
+chip_id = string.format("%06X", node.chipid())
 device_id = "esp8266_" .. chip_id
 mqtt_prefix = "sensor/" .. device_id
 mqttclient = mqtt.Client(device_id, 120)
 
+dofile("config.lua")
 
 print("ESP8266 " .. chip_id)
 
@@ -19,8 +21,7 @@ scd4x = require("scd4x")
 i2c.setup(0, 2, 1, i2c.SLOW)
 
 function log_restart()
-	print("Network error " .. wifi.sta.status() .. ". Restarting in 20 seconds.")
-	delayed_restart:start()
+	print("Network error " .. wifi.sta.status())
 end
 
 function setup_client()
@@ -29,9 +30,10 @@ function setup_client()
 	if not scd4x.start() then
 		print("SCD4x initialization error")
 	end
-	publishing = true
+	publishing_mqtt = true
 	mqttclient:publish(mqtt_prefix .. "/state", "online", 0, 1, function(client)
-		publishing = false
+		publishing_mqtt = false
+		push_timer:start()
 		push_data()
 	end)
 end
@@ -39,7 +41,6 @@ end
 function connect_mqtt()
 	print("IP address: " .. wifi.sta.getip())
 	print("Connecting to MQTT " .. mqtt_host)
-	delayed_restart:stop()
 	mqttclient:on("connect", hass_register)
 	mqttclient:on("offline", log_restart)
 	mqttclient:lwt(mqtt_prefix .. "/state", "offline", 0, 1)
@@ -63,21 +64,37 @@ function push_data()
 		print("SCD4x error")
 	else
 		local json_str = string.format('{"co2_ppm": %d, "temperature_degc": %d.%d, "humidity_relpercent": %d.%d, "rssi_dbm": %d}', co2, raw_temp/65536 - 45, (raw_temp%65536)/6554, raw_humi/65536, (raw_humi%65536)/6554, wifi.sta.getrssi())
-		if not publishing then
-			publishing = true
+		local influx_str = string.format("co2_ppm=%d,temperature_degc=%d.%d,humidity_relpercent=%d.%d", co2, raw_temp/65536 - 45, (raw_temp%65536)/6554, raw_humi/65536, (raw_humi%65536)/6554)
+		if not publishing_mqtt then
+			publishing_mqtt = true
+			watchdog:start(true)
 			gpio.write(ledpin, 0)
 			mqttclient:publish(mqtt_prefix .. "/data", json_str, 0, 0, function(client)
-				publishing = false
-				gpio.write(ledpin, 1)
-				collectgarbage()
+				publishing_mqtt = false
+				if influx_url and influx_attr and influx_str then
+					publish_influx(influx_str)
+				else
+					gpio.write(ledpin, 1)
+					collectgarbage()
+				end
 			end)
 		end
 	end
-	push_timer:start()
+end
+
+function publish_influx(payload)
+	if not publishing_http then
+		publishing_http = true
+		http.post(influx_url, influx_header, "scd4x" .. influx_attr .. " " .. payload, function(code, data)
+			publishing_http = false
+			gpio.write(ledpin, 1)
+			collectgarbage()
+		end)
+	end
 end
 
 function hass_register()
-	local hass_device = string.format('{"connections":[["mac","%s"]],"identifiers":["%s"],"model":"ESP8266","name":"ESP8266 with SCD4x","manufacturer":"DIY"}', wifi.sta.getmac(), device_id)
+	local hass_device = string.format('{"connections":[["mac","%s"]],"identifiers":["%s"],"model":"ESP8266 + SCD4x","name":"SCD4x %s","manufacturer":"derf"}', wifi.sta.getmac(), device_id, chip_id)
 	local hass_entity_base = string.format('"device":%s,"state_topic":"%s/data","expire_after":600', hass_device, mqtt_prefix)
 	local hass_co2 = string.format('{%s,"name":"CO₂","object_id":"%s_co2","unique_id":"%s_co2","device_class":"carbon_dioxide","unit_of_measurement":"ppm","value_template":"{{value_json.co2_ppm}}"}', hass_entity_base, device_id, device_id)
 	local hass_temp = string.format('{%s,"name":"Temperature","object_id":"%s_temperature","unique_id":"%s_temperature","device_class":"temperature","unit_of_measurement":"°c","value_template":"{{value_json.temperature_degc}}"}', hass_entity_base, device_id, device_id)
@@ -96,7 +113,8 @@ function hass_register()
 	end)
 end
 
-delayed_restart:register(20 * 1000, tmr.ALARM_SINGLE, node.restart)
-push_timer:register(20 * 1000, tmr.ALARM_SEMI, push_data)
+watchdog:register(180 * 1000, tmr.ALARM_SEMI, node.restart)
+push_timer:register(20 * 1000, tmr.ALARM_AUTO, push_data)
+watchdog:start()
 
 connect_wifi()
