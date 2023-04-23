@@ -1,8 +1,8 @@
 # ESP8266 Lua/NodeMCU module for Sensirion SCD40/SCD41 CO₂ sensor
 
-This repository contains a Lua module (`scd4x.lua`) as well as
-MQTT-based HomeAssistant integration (`init.lua`) for **Sensirion SCD40/SCD41**
-CO₂ sensors.
+This repository contains an ESP8266 NodeMCU Lua module (`scd4x.lua`) as well as
+MQTT / HomeAssistant / InfluxDB integration example (`init.lua`) for
+**Sensirion SCD40/SCD41** CO₂ sensors.
 
 ## Dependencies
 
