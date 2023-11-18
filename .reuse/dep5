@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Files: init.lua scd4x.lua
+Copyright: 2022 Birte Kristina Friesel
+License: BSD-2-Clause
+
+Files: README.md .gitignore
+Copyright: 2022-2023 Birte Kristina Friesel
+License: CC0-1.0
