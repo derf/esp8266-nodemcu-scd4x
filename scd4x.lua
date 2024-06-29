@@ -1,41 +1,39 @@
 local scd4x = {}
-local device_address = 0x62
-
-scd4x.bus_id = 0
+local addr = 0x62
 
 function scd4x.start()
-	i2c.start(scd4x.bus_id)
-	if not i2c.address(scd4x.bus_id, device_address, i2c.TRANSMITTER) then
+	i2c.start(0)
+	if not i2c.address(0, addr, i2c.TRANSMITTER) then
 		return false
 	end
-	i2c.write(scd4x.bus_id, {0x21, 0xb1})
-	i2c.stop(scd4x.bus_id)
+	i2c.write(0, {0x21, 0xb1})
+	i2c.stop(0)
 	return true
 end
 
 function scd4x.stop()
-	i2c.start(scd4x.bus_id)
-	if not i2c.address(scd4x.bus_id, device_address, i2c.TRANSMITTER) then
+	i2c.start(0)
+	if not i2c.address(0, addr, i2c.TRANSMITTER) then
 		return false
 	end
-	i2c.write(scd4x.bus_id, {0x3f, 0x86})
-	i2c.stop(scd4x.bus_id)
+	i2c.write(0, {0x3f, 0x86})
+	i2c.stop(0)
 	return true
 end
 
 function scd4x.read()
-	i2c.start(scd4x.bus_id)
-	if not i2c.address(scd4x.bus_id, device_address, i2c.TRANSMITTER) then
+	i2c.start(0)
+	if not i2c.address(0, addr, i2c.TRANSMITTER) then
 		return nil
 	end
-	i2c.write(scd4x.bus_id, {0xec, 0x05})
-	i2c.stop(scd4x.bus_id)
-	i2c.start(scd4x.bus_id)
-	if not i2c.address(scd4x.bus_id, device_address, i2c.RECEIVER) then
+	i2c.write(0, {0xec, 0x05})
+	i2c.stop(0)
+	i2c.start(0)
+	if not i2c.address(0, addr, i2c.RECEIVER) then
 		return nil
 	end
-	local data = i2c.read(scd4x.bus_id, 9)
-	i2c.stop(scd4x.bus_id)
+	local data = i2c.read(0, 9)
+	i2c.stop(0)
 	if not scd4x.crc_valid(data, 9) then
 		return nil
 	end
