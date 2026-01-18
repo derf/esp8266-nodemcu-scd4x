@@ -1,8 +1,9 @@
 # ESP8266 Lua/NodeMCU module for Sensirion SCD4x CO₂ sensors
 
-This repository contains an ESP8266 NodeMCU Lua module (`scd4x.lua`) as well as
-MQTT / HomeAssistant / InfluxDB integration example (`init.lua`) for
-**Sensirion SCD4x** CO₂ sensors connected via I²C.
+[esp8266-nodemcu-scd4x](https://finalrewind.org/projects/esp8266-nodemcu-scd4x/)
+provides an ESP8266 NodeMCU Lua module (`scd4x.lua`) as well as MQTT /
+HomeAssistant / InfluxDB integration example (`init.lua`) for **Sensirion
+SCD4x** CO₂ sensors connected via I²C.
 
 ## Dependencies
 
@@ -50,7 +51,7 @@ function some_timer_callback()
 	local co2, raw_temp, raw_humi = scd4x.read()
 	if co2 ~= nil then
 		-- co2      : CO₂ concentration [ppm]
-		-- raw_temp : raw_temp/2¹⁶ - 45 == Temperature [°c]
+		-- raw_temp : raw_temp/2¹⁶ - 45 == Temperature [°C]
 		-- raw_humi : raw_humi/2¹⁶ == Humidity [%]
 	else
 		print("SCD4x error")
@@ -78,3 +79,11 @@ influx_attr = "..."
 
 Readings will be published as `scd4x[influx_attr] co2_ppm=%d,temperature_degc=%d.%d,humidity_relpercent=%d.%d`.
 So, unless `influx_attr = ''`, it must start with a comma, e.g. `influx_attr = ',device=' .. device_id`.
+
+## Resources
+
+Mirrors of the esp8266-nodemcu-scd4x repository are maintained at the following locations:
+
+* [Chaosdorf](https://chaosdorf.de/git/derf/esp8266-nodemcu-scd4x)
+* [Finalrewind](https://git.finalrewind.org/derf/esp8266-nodemcu-scd4x)
+* [GitHub](https://github.com/derf/esp8266-nodemcu-scd4x)
