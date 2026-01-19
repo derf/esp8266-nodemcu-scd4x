@@ -1,9 +1,8 @@
 # ESP8266 Lua/NodeMCU module for Sensirion SCD4x CO₂ sensors
 
-[esp8266-nodemcu-scd4x](https://finalrewind.org/projects/esp8266-nodemcu-scd4x/)
-provides an ESP8266 NodeMCU Lua module (`scd4x.lua`) as well as MQTT /
-HomeAssistant / InfluxDB integration example (`init.lua`) for **Sensirion
-SCD4x** CO₂ sensors connected via I²C.
+This repository provides an ESP8266 NodeMCU Lua module (`scd4x.lua`) as well as
+MQTT / HomeAssistant / InfluxDB integration example (`init.lua`) for
+**Sensirion SCD4x** CO₂ sensors connected via I²C.
 
 ## Dependencies
 
